@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from flask_mongoengine import MongoEngine
 
 
@@ -15,15 +15,45 @@ app.config['MONGODB_SETTINGS'] = {
     'authentication_source': 'admin'  # (Opcional) Banco de autenticação
 }
 
+
+_user_parser = reqparse.RequestParser()
+_user_parser.add_argument('first_name', 
+                         type=str, 
+                         required=True, 
+                         help='This field cannot be blank'
+                         )
+_user_parser.add_argument('last_name', 
+                         type=str, 
+                         required=True, 
+                         help='This field cannot be blank'
+                         )
+_user_parser.add_argument('cpf', 
+                         type=str, 
+                         required=True, 
+                         help='This field cannot be blank'
+                         )
+_user_parser.add_argument('email', 
+                         type=str, 
+                         required=True, 
+                         help='This field cannot be blank'
+                         )
+_user_parser.add_argument('birt_date', 
+                         type=str, 
+                         required=True, 
+                         help='This field cannot be blank'
+                         )
+
+
+
 api = Api(app)
 db = MongoEngine(app)
 
 
 class Users(Resource):
-    def get(self):
-        return UserModel.objects()
-        # return {'message': 'user 1'}
+    def post(self):
+        return {'message': 'user'}
 
+    
 
 class UserModel(db.Document):
     cpf = db.StringField(required=True,
@@ -31,12 +61,14 @@ class UserModel(db.Document):
     email = db.EmailField(required=True)
     first_name = db.StringField(required=True)
     last_name = db.StringField(required=True)  # Corrigido o erro de digitação
-    birth_date = db.DateTimeField(required=True)
+    birt_date = db.DateTimeField(required=True)
 
 
 class User(Resource):
     def post(self):
-        return {'message': 'user'}
+        #return UserModel.objects()
+        data = _user_parser.parse_args()
+        UserModel(**data).save
 
     def get(self, cpf):
         return {'message': cpf}
