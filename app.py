@@ -39,27 +39,35 @@ _user_parser.add_argument('email',
                           help='This field cannot be blank')
 _user_parser.add_argument('birth_date',
                           type=str,
-                          required=True, 
+                          required=True,
                           help='This field cannot be blank')
 
 # Modelo de usuário
+
+
 class UserModel(db.Document):
     cpf = db.StringField(required=True, unique=True)
-    email = db.EmailField(required=True, unique=True)
+    email = db.EmailField(required=True)
     first_name = db.StringField(required=True)
     last_name = db.StringField(required=True)
     birth_date = db.DateTimeField(required=True)
 
+
+class Users(Resource):
+    def get(self):
+        return jsonify(UserModel.objects())
+
+
 # Rota para gerenciar usuários
 class User(Resource):
     def validate_cpf(self, cpf):
-        # Has the correct mask? 
+        # Has the correct mask?
         if not re.match(r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', cpf):
             return False
-        # Grab only numbers 
+        # Grab only numbers
         numbers = [int(digit) for digit in cpf if digit.isdigit()]
 
-         # Does it have 11 digits?
+        # Does it have 11 digits?
         if len(numbers) != 11 or len(set(numbers)) == 1:
             return False
 
@@ -78,8 +86,7 @@ class User(Resource):
             return False
 
         return True
-        
-    
+
     def post(self):
         data = _user_parser.parse_args()
 
@@ -88,15 +95,17 @@ class User(Resource):
 
         # Converter birth_date para datetime
         try:
-            data['birth_date'] = datetime.strptime(data['birth_date'], '%Y-%m-%d')
+            data['birth_date'] = datetime.strptime(data['birth_date'],
+                                                   '%Y-%m-%d')
         except ValueError:
-            return {'message': 'Invalid birth_date format. Use YYYY-MM-DD.'}, 400
+            return {'message':
+                    'Invalid birth_date format. Use YYYY-MM-DD.'}, 400
 
         try:
             # Criar e salvar o usuário
             user = UserModel(**data)
             user.save()
-            return {'message': 'User %s created successfully.' % user.id }, 201
+            return {'message': 'User %s created successfully.' % user.id}, 201
         except Exception as e:
             return {'message': str(e)}, 500
 
@@ -105,6 +114,7 @@ class User(Resource):
         if user:
             return jsonify(user)
         return {'message': 'User not found'}, 404
+
 
 # Adicionar as rotas
 api.add_resource(User, '/user', '/user/<string:cpf>')
