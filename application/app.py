@@ -1,23 +1,9 @@
 from flask import Flask, jsonify
 from flask_restful import Resource, Api, reqparse
-from flask_mongoengine import MongoEngine
 from datetime import datetime
+from mongoengine import NotUniqueError
+from .model import UserModel
 import re
-
-app = Flask(__name__)
-
-# Configurações para o MongoDB
-app.config['MONGODB_SETTINGS'] = {
-    'db': 'users',                  # Nome do banco de dados
-    'host': 'mongodb',              # Host do MongoDB
-    'port': 27017,                  # Porta padrão do MongoDB
-    'username': 'admin',            # (Opcional) Usuário para autenticação
-    'password': 'admin',            # (Opcional) Senha para autenticação
-    'authentication_source': 'admin'  # (Opcional) Banco de autenticação
-}
-
-api = Api(app)
-db = MongoEngine(app)
 
 # Parser para entrada de dados
 _user_parser = reqparse.RequestParser()
@@ -44,13 +30,6 @@ _user_parser.add_argument('birth_date',
 
 # Modelo de usuário
 
-
-class UserModel(db.Document):
-    cpf = db.StringField(required=True, unique=True)
-    email = db.EmailField(required=True)
-    first_name = db.StringField(required=True)
-    last_name = db.StringField(required=True)
-    birth_date = db.DateTimeField(required=True)
 
 
 class Users(Resource):
@@ -93,8 +72,13 @@ class User(Resource):
         if not self.validate_cpf(data["cpf"]):
             return {"message": "CPF is invalid!"}, 400
 
-        # Converter birth_date para datetime
         try:
+            response = UserModel(**data).save()
+            return {"message": " User %s successfully created!" % response.id} 
+        except NotUniqueError:
+            return {"Message": "CPF already exists in database"}, 400
+        # Converter birth_date para datetime
+        """ try:
             data['birth_date'] = datetime.strptime(data['birth_date'],
                                                    '%Y-%m-%d')
         except ValueError:
@@ -108,16 +92,9 @@ class User(Resource):
             return {'message': 'User %s created successfully.' % user.id}, 201
         except Exception as e:
             return {'message': str(e)}, 500
-
+ """
     def get(self, cpf):
         user = UserModel.objects(cpf=cpf).first()
-        if user:
+        if user: 
             return jsonify(user)
-        return {'message': 'User not found'}, 404
-
-
-# Adicionar as rotas
-api.add_resource(User, '/user', '/user/<string:cpf>')
-
-if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0")
+        return {"message": "User does not exist in database"}, 404
