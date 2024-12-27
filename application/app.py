@@ -1,6 +1,5 @@
-from flask import Flask, jsonify
-from flask_restful import Resource, Api, reqparse
-from datetime import datetime
+from flask import jsonify
+from flask_restful import Resource, reqparse
 from mongoengine import NotUniqueError
 from .model import UserModel
 import re
@@ -8,9 +7,9 @@ import re
 # Parser para entrada de dados
 _user_parser = reqparse.RequestParser()
 _user_parser.add_argument('first_name',
-                           type=str,
-                           required=True,
-                           help='This field cannot be blank')
+                          type=str,
+                          required=True,
+                          help='This field cannot be blank')
 _user_parser.add_argument('last_name',
                           type=str,
                           required=True,
@@ -29,7 +28,6 @@ _user_parser.add_argument('birth_date',
                           help='This field cannot be blank')
 
 # Modelo de usuário
-
 
 
 class Users(Resource):
@@ -74,7 +72,7 @@ class User(Resource):
 
         try:
             response = UserModel(**data).save()
-            return {"message": " User %s successfully created!" % response.id} 
+            return {"message": " User %s successfully created!" % response.id}
         except NotUniqueError:
             return {"Message": "CPF already exists in database"}, 400
         # Converter birth_date para datetime
@@ -95,6 +93,6 @@ class User(Resource):
  """
     def get(self, cpf):
         user = UserModel.objects(cpf=cpf).first()
-        if user: 
+        if user:
             return jsonify(user)
         return {"message": "User does not exist in database"}, 404
