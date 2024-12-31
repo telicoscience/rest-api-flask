@@ -36,6 +36,10 @@ class Users(Resource):
     def get(self):
         return jsonify(UserModel.objects())
 
+class OlaMundo(Resource):
+    def get(self):
+        return 'Olá mundo'
+
 
 class User(Resource):
 
