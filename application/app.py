@@ -4,30 +4,32 @@ from mongoengine import NotUniqueError
 from .model import UserModel
 import re
 
-# Parser para entrada de dados
 _user_parser = reqparse.RequestParser()
 _user_parser.add_argument('first_name',
                           type=str,
                           required=True,
-                          help='This field cannot be blank')
+                          help="This field cannot be blank."
+                          )
 _user_parser.add_argument('last_name',
                           type=str,
                           required=True,
-                          help='This field cannot be blank')
+                          help="This field cannot be blank."
+                          )
 _user_parser.add_argument('cpf',
                           type=str,
                           required=True,
-                          help='This field cannot be blank')
+                          help="This field cannot be blank."
+                          )
 _user_parser.add_argument('email',
                           type=str,
                           required=True,
-                          help='This field cannot be blank')
+                          help="This field cannot be blank."
+                          )
 _user_parser.add_argument('birth_date',
                           type=str,
                           required=True,
-                          help='This field cannot be blank')
-
-# Modelo de usuário
+                          help="This field cannot be blank."
+                          )
 
 
 class Users(Resource):
@@ -35,12 +37,14 @@ class Users(Resource):
         return jsonify(UserModel.objects())
 
 
-# Rota para gerenciar usuários
 class User(Resource):
+
     def validate_cpf(self, cpf):
+
         # Has the correct mask?
-        if not re.match(r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', cpf):
+        if not re.match(r'\d{3}\.\d{3}\.\d{3}-\d{2}', cpf):
             return False
+
         # Grab only numbers
         numbers = [int(digit) for digit in cpf if digit.isdigit()]
 
@@ -72,27 +76,14 @@ class User(Resource):
 
         try:
             response = UserModel(**data).save()
-            return {"message": " User %s successfully created!" % response.id}
+            return {"message": "User %s successfully created!" % response.id}
         except NotUniqueError:
-            return {"Message": "CPF already exists in database"}, 400
-        # Converter birth_date para datetime
-        """ try:
-            data['birth_date'] = datetime.strptime(data['birth_date'],
-                                                   '%Y-%m-%d')
-        except ValueError:
-            return {'message':
-                    'Invalid birth_date format. Use YYYY-MM-DD.'}, 400
+            return {"message": "CPF already exists in database!"}, 400
 
-        try:
-            # Criar e salvar o usuário
-            user = UserModel(**data)
-            user.save()
-            return {'message': 'User %s created successfully.' % user.id}, 201
-        except Exception as e:
-            return {'message': str(e)}, 500
- """
     def get(self, cpf):
-        user = UserModel.objects(cpf=cpf).first()
-        if user:
-            return jsonify(user)
-        return {"message": "User does not exist in database"}, 404
+        response = UserModel.objects(cpf=cpf)
+
+        if response:
+            return jsonify(response)
+
+        return {"message": "User does not exist in database!"}, 400
