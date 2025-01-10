@@ -6,6 +6,7 @@ from .app import User, Users
 
 def create_app(config):
     app = Flask(__name__)
+    app.config['DEBUG'] = True
     app.config.from_object(config)
     api = Api(app)
     init_db(app)
