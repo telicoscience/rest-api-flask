@@ -5,4 +5,7 @@ test:
 	@pytest -v --disable-warnings
 compose: 
 	@docker compose build 
-	@docker compose up 
+	@docker compose up
+heroku: 
+	@heroku container:push -a comunidadedevops-restapi web
+	@heroku container:release -a comunidadedevops-restapi web 
