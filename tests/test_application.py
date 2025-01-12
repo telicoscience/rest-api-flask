@@ -1,5 +1,6 @@
 import pytest
 from application import create_app
+from mongomock import MongoClient
 
 
 class TestApplication():
@@ -7,6 +8,12 @@ class TestApplication():
     @pytest.fixture
     def client(self):
         app = create_app('config.MockConfig')
+        app.config['MONGODB_SETTINGS'] = {
+            'db': 'test',
+            'host': 'localhost',
+            'port': 27017,
+            'mongo_client_class': MongoClient
+        }
         return app.test_client()
 
     @pytest.fixture
