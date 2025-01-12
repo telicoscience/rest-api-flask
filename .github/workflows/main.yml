@@ -41,9 +41,9 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
-      # Fazer o deploy na Vercel
+        # Fazer o deploy na Vercel
       - name: Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_CLI_KEY }} # Token de API armazenado nos Secrets
         run: |
-          vercel --prod --token $VERCEL_TOKEN
+          vercel --prod --token $VERCEL_TOKEN --yes
