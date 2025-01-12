@@ -17,4 +17,4 @@ jobs:
           pip install flake8 pytest 
         
       - name: Run tests 
-        run: make test 
+        run: make test
