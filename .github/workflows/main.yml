@@ -1,49 +1,61 @@
-name: Deploy to Vercel
+name: Deploy to ECS (Fargate)
 
 on:
   push:
-    branches:
-      [main] # Executa o workflow ao fazer push na branch 'main'
-  workflow_dispatch: # Permite execução manual do workflow
+    branches: [ "main" ]  # ajuste se necessário
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
+  CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checkout do código
-      - uses: actions/checkout@v3
-
-      # Configurar o Python
-      - uses: actions/setup-python@v3
-        with:
-          python-version: '3.9'
-      
-      # Instalar dependências
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt 
-          pip install flake8 pytest mongomock
-        
-      # Rodar os testes
-      - name: Run tests
-        run: make test
-
   deploy:
-    needs: test # O deploy só será executado se o job 'test' passar
     runs-on: ubuntu-latest
-
+    permissions:
+      id-token: write   # necessário pro OIDC
+      contents: read
     steps:
-      # Checkout do código
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Instalar o Vercel CLI
-      - name: Install Vercel CLI
-        run: npm install -g vercel
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
 
-        # Fazer o deploy na Vercel
-      - name: Deploy to Vercel
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_CLI_KEY }} # Token de API armazenado nos Secrets
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          vercel --prod --token $VERCEL_TOKEN --yes
+          docker build -t $REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker tag $REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG $REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+          docker push $REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push $REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+          echo "IMAGE_URI=$REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_ENV
+
+      # Se você versiona um taskdef.json, renderizamos o container image lá:
+      - name: Render ECS task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ecs-taskdef.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.IMAGE_URI }}
+
+      - name: Deploy ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
