@@ -9,22 +9,17 @@
   "containerDefinitions": [
     {
       "name": "web",
-      "image": "REPLACED_BY_ACTION",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/MY_ECR_REPOSITORY:latest",
       "essential": true,
-      "portMappings": [
-        { "containerPort": 3000, "protocol": "tcp" }
-      ],
+      "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/my-app",
-          "awslogs-region": "us-east-1",
+          "awslogs-region": "REGION",
           "awslogs-stream-prefix": "ecs"
         }
-      },
-      "environment": [
-        { "name": "NODE_ENV", "value": "production" }
-      ]
+      }
     }
   ]
 }
