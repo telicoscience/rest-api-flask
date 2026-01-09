@@ -1,7 +1,6 @@
 # rest-api-flask (Flask + MongoDB)
 
-REST API built with Flask and Flask-RESTful, using MongoDB via MongoEngine.
-The project focuses on clean configuration per environment, containerized setup, and automated testing/pipeline.
+REST API built with Flask and Flask-RESTful, using MongoDB via MongoEngine. The project focuses on clean configuration per environment, containerized setup, and automated testing/pipeline.
 
 ## Tech Stack
 - Python + Flask + Flask-RESTful
@@ -39,3 +38,26 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python wsgi.py
+```
+
+## Running with Docker Compose
+```bash
+docker compose up --build
+```
+
+## Testing
+```bash
+pytest -q
+```
+
+## Project structure (high level)
+- `app.py` / `wsgi.py`: entrypoints
+- `config.py`: environment-based configuration (dev/prod/mock)
+- `application/`: app factory + resources + models (MongoEngine)
+
+## Roadmap (Next)
+- Add tests for PATCH endpoint
+- Implement DELETE endpoint
+- Add `/health` endpoint with DB check
+- Improve response serialization (consistent JSON)
+- Add MongoDB volume in compose for persistence
